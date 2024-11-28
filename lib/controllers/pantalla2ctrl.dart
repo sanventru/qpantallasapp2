@@ -14,18 +14,17 @@ import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 //import 'package:video_viewer/video_viewer.dart';
 import 'dart:convert' as convert;
-// import 'package:video_player/video_player.dart';
+import 'package:video_player/video_player.dart';
 
 // import '../screens/config.dart';
 // import 'package:image/image.dart' as im;
 // import 'package:flutter_startup/flutter_startup.dart';
 import 'package:pausable_timer/pausable_timer.dart';
-import 'package:qpantallasapp2/controllers/customvideoplayer.dart';
 import '../globals.dart' as globals;
 import 'package:restart_app/restart_app.dart';
 
 class Pantalla2ctrl extends GetxController {
-  CustomVideoPlayerController? videoController;
+  VideoPlayerController? videoController;
 
   bool isPlaying = false;
   bool actualizando = false;
@@ -44,7 +43,22 @@ class Pantalla2ctrl extends GetxController {
   late Timer timerp;
   late final PausableTimer timer;
   var countDown = 5;
-   final isVideoComplete = false.obs;
+  final isVideoComplete = false.obs;
+
+  @override
+  void onClose() {
+    videoController?.dispose();
+    super.onClose();
+  }
+
+   void _initVideoController(String path) {
+    videoController?.dispose();
+    videoController = VideoPlayerController.file(File(path))
+      ..initialize().then((_) {
+        videoController?.play();
+        videoController?.addListener(_onVideoStateChange);
+      });
+  }
 
   Widget mostrarw = Center(
     child: Text(
@@ -55,16 +69,17 @@ class Pantalla2ctrl extends GetxController {
 
 
     void _onVideoStateChange() {
-    if (videoController?.isPlaying == false && videoController?.position == videoController?.duration) {
+     if (videoController?.value.isPlaying == false && 
+        videoController?.value.position == videoController?.value.duration) {
       isVideoComplete.value = true;
-      periodictime = 0; // Forzar el cambio al siguiente contenido
+      periodictime = 0;
     }
   }
 
   onReady() {
 
        // Inicializar el video controller
-    videoController = CustomVideoPlayerController();
+    // videoController = CustomVideoPlayerController();
     // Agregar listener para el estado del video
     videoController?.addListener(_onVideoStateChange);
     print('Pantalla2ctrl onReady');
@@ -115,19 +130,7 @@ class Pantalla2ctrl extends GetxController {
     }
   }
 
-  void listenToPlayingChanges() {
-    periodictime = 0;
-    // if (controllerg.video != null) {
-    //   if (!controllerg.isPlaying && vervideo) {
-    //     periodictime = 0;
-    //   } else {
-    //     if (vervideo) {
-    //       periodictime++;
-    //     }
-    //   }
-    // }
-    
-  }
+
 
   inicio() async {
     compute(startTimer(), periodictime);
@@ -139,6 +142,10 @@ class Pantalla2ctrl extends GetxController {
     timer = PausableTimer(
       Duration(seconds: 1),
       () {
+        if (vervideo && !isVideoComplete.value) {
+          timer..reset()..start();
+          return;
+        }
         periodictime--;
         if (periodictime > 0) {
           timer
@@ -209,11 +216,18 @@ class Pantalla2ctrl extends GetxController {
                   zonas[i]['imagen'].toString().contains('.mov')) {
                 vervideo = true;
                 verimagen = false;
-                mostrarw = CustomVideoPlayer(
-                  videoPath: (zonas[i]['imagen']),
-                  showControls: true, // Si quieres mostrar controles o no
-                );
+                isVideoComplete.value = false; 
+                 _initVideoController(zonas[i]['imagen']);
+                // mostrarw = CustomVideoPlayer(
+                //   videoPath: (zonas[i]['imagen']),
+                //   showControls: true, // Si quieres mostrar controles o no
+                //   controller: videoController,
+                // );
                 // periodictime = 10;
+                    mostrarw = AspectRatio(
+                  aspectRatio: 16/9,
+                  child: VideoPlayer(videoController!),
+                );
                 // VideoViewerController controller = VideoViewerController();
                 // controllerg = controller;
                 // controller.addListener(listenToPlayingChanges);
@@ -299,7 +313,7 @@ class Pantalla2ctrl extends GetxController {
     }
     String namepantalla = urlt.split('/').last;
 
-    var urlping = Uri.parse(urlbase + '/screensping/' + namepantalla);
+    var urlping = Uri.parse(urlbase + '/screensping/' + namepantalla); //esto es para ver si se rei
     try {
       var resp = await http.get(urlping);
       if (resp.statusCode == 200) {
@@ -371,7 +385,7 @@ class Pantalla2ctrl extends GetxController {
                 if (resp2.statusCode == 200) {
                   hash1 += resp2.body.hashCode;
                   var post = convert.jsonDecode(resp2.body);
-                  String fileurl = urlbase + post['content']['file_url'];
+                  // String fileurl = urlbase + post['content']['file_url'];
                   // String filep = await downloadFile(
                   //     fileurl, post['content']['filename'].toString());
                   // post['content']['file'] = filep;
@@ -430,7 +444,7 @@ class Pantalla2ctrl extends GetxController {
       for (var i = 0; i < zonast.length; i++) {
         var zt = zonast[i];
         for (var k = 0; k < zt['assets'].length; k++) {
-          String as_url = urlbase + zt['assets'][k]['content']['file_url'];
+          // String as_url = urlbase + zt['assets'][k]['content']['file_url'];
           String filep = await downloadFile(
               urlbase + zt['assets'][k]['content']['file_url'],
               zt['assets'][k]['content']['filename'].toString());
