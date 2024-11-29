@@ -8,6 +8,8 @@ import '../screens/pantalla2.dart';
 class Config extends StatelessWidget {
   final a = Get.put(Configctrl());
 
+   Config({super.key});
+
   @override
   Widget build(BuildContext context) {
     // var size = MediaQuery.of(context).size;
@@ -23,8 +25,8 @@ class Config extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,  
               children: [
                 Image.asset('assets/dunkin_logo.png', height: 40),
-                SizedBox(width: 12),
-                Text(
+                const SizedBox(width: 12),
+                const Text(
                   '',
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
@@ -45,7 +47,7 @@ class Config extends StatelessWidget {
                 ),
               ),
               child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+                padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
                 child: Obx(() {
                   print(a.cambio.value);
                   return Column(
@@ -59,7 +61,7 @@ class Config extends StatelessWidget {
                           color: Colors.grey[800],
                         ),
                       ),
-                      SizedBox(height: 8),
+                      const SizedBox(height: 8),
                       Container(
                         decoration: BoxDecoration(
                           color: Colors.white,
@@ -68,7 +70,7 @@ class Config extends StatelessWidget {
                             BoxShadow(
                               color: Colors.black.withOpacity(0.05),
                               blurRadius: 10,
-                              offset: Offset(0, 4),
+                              offset: const Offset(0, 4),
                             ),
                           ],
                         ),
@@ -99,7 +101,7 @@ class Config extends StatelessWidget {
                           ),
                         ),
                       ),
-                      SizedBox(height: 24),
+                      const SizedBox(height: 24),
                       Text(
                         'Orientación de Pantalla',
                         style: TextStyle(
@@ -108,7 +110,7 @@ class Config extends StatelessWidget {
                           color: Colors.grey[800],
                         ),
                       ),
-                      SizedBox(height: 8),
+                      const SizedBox(height: 8),
                       Container(
                         decoration: BoxDecoration(
                           color: Colors.white,
@@ -117,12 +119,12 @@ class Config extends StatelessWidget {
                             BoxShadow(
                               color: Colors.black.withOpacity(0.05),
                               blurRadius: 10,
-                              offset: Offset(0, 4),
+                              offset: const Offset(0, 4),
                             ),
                           ],
                         ),
                         child: DropdownSearch<String>(
-                          popupProps: PopupProps.menu(
+                          popupProps: const PopupProps.menu(
                             fit: FlexFit.loose,
                             menuProps: MenuProps(
                               backgroundColor: Colors.white,
@@ -146,20 +148,20 @@ class Config extends StatelessWidget {
                           selectedItem: a.orientacion,
                         ),
                       ),
-                      Spacer(),
-                      Container(
+                      const Spacer(),
+                      SizedBox(
                         width: double.infinity,
                         child: ElevatedButton(
                           onPressed: () => Get.to(() => Pantalla2()),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.orange[400],
-                            padding: EdgeInsets.symmetric(vertical: 16),
+                            padding: const EdgeInsets.symmetric(vertical: 16),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
                             elevation: 2,
                           ),
-                          child: Text(
+                          child: const Text(
                             'Guardar configuración',
                             style: TextStyle(
                               fontSize: 16,

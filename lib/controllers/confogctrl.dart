@@ -26,13 +26,14 @@ class Configctrl extends GetxController {
       '${globals.urlbase}/static/user_files/post_images/f47f62ce-ee95-4b2a-baa0-8632f188f6ee02_A-Board_collage-espresso_2.mp4';
   // String urlbase = 'http://164.90.148.158:5000';
   String urlbase = globals.urlbase;
-  static var httpClient = new HttpClient();
+  static var httpClient = HttpClient();
   String url = '';
   String orientacion = 'vertical';
   var cambio = ''.obs;
   var rotado = 0.obs;
   TextEditingController txturl =
       TextEditingController(text: '${globals.urlbase}/screens/basic/default');
+  @override
   onReady() {
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: []);
     print('Iniciando config');
@@ -51,7 +52,7 @@ class Configctrl extends GetxController {
     final box = GetStorage();
     box.write('qpantalla_url', txturl.text);
     await cargahtml();
-    Get.defaultDialog(title: 'Mensaje', content: Text('Url almacenada'));
+    Get.defaultDialog(title: 'Mensaje', content: const Text('Url almacenada'));
     cambio.value = url;
   }
 
@@ -74,7 +75,7 @@ class Configctrl extends GetxController {
         var id0 = data.split('"id":')[1];
         var id1 = id0.split(',')[0].toString().trim();
         print(id1);
-        var url = Uri.parse(urlbase + '/screens/json/' + id1.toString());
+        var url = Uri.parse('$urlbase/screens/json/$id1');
         final box = GetStorage();
         var resp = await http.get(url);
         if (resp.statusCode == 200) {
@@ -88,11 +89,10 @@ class Configctrl extends GetxController {
             List feeds = z['feeds'];
             String feedstring = '[';
             for (var j = 0; j < feeds.length; j++) {
-              feedstring = feedstring + feeds[j].toString() + ',';
+              feedstring = '$feedstring${feeds[j]},';
             }
-            ;
-            feedstring = feedstring.substring(0, feedstring.length - 1) + ']';
-            url = Uri.parse(urlbase + '/screens/posts_from_feeds/$feedstring');
+            feedstring = '${feedstring.substring(0, feedstring.length - 1)}]';
+            url = Uri.parse('$urlbase/screens/posts_from_feeds/$feedstring');
             var resp1 = await http.get(url);
             List assests = [];
             if (resp1.statusCode == 200) {
@@ -101,7 +101,7 @@ class Configctrl extends GetxController {
               for (var k = 0; k < posts.length; k++) {
                 var p = posts[k];
                 var resp2 = await http.get(Uri.parse(
-                    urlbase + '/posts/' + p['id'].toString() + '/json'));
+                    '$urlbase/posts/${p['id']}/json'));
                 if (resp2.statusCode == 200) {
                   hash1 += resp2.body.hashCode;
                   var post = convert.jsonDecode(resp2.body);
@@ -118,15 +118,13 @@ class Configctrl extends GetxController {
                   assests.add(post);
                 }
               }
-              ;
             }
 
             z['assets'] = assests;
             z['imagen'] =
-                assests.length > 0 ? assests[0]['content']['file'] : '';
+                assests.isNotEmpty ? assests[0]['content']['file'] : '';
             z['imagenindex'] = 0;
           }
-          ;
           // print(zonas);
           List zonaslocales = [];
 

@@ -28,7 +28,7 @@ class Pantalla2ctrl extends GetxController {
 
   bool isPlaying = false;
   bool actualizando = false;
-  static var httpClient = new HttpClient();
+  static var httpClient = HttpClient();
   bool vervideo = false;
   bool verimagen = false;
   // String urlbase = 'http://164.90.148.158:5000';
@@ -60,7 +60,7 @@ class Pantalla2ctrl extends GetxController {
       });
   }
 
-  Widget mostrarw = Center(
+  Widget mostrarw = const Center(
     child: Text(
       'Iniciando bucle.....',
       style: TextStyle(color: Colors.white),
@@ -72,10 +72,11 @@ class Pantalla2ctrl extends GetxController {
      if (videoController?.value.isPlaying == false && 
         videoController?.value.position == videoController?.value.duration) {
       isVideoComplete.value = true;
-      periodictime = 0;
+      periodictime = 2;
     }
   }
 
+  @override
   onReady() {
 
        // Inicializar el video controller
@@ -140,7 +141,7 @@ class Pantalla2ctrl extends GetxController {
     // el 8 cambiar por una variable global que se actualiza al igual que zona[imagen]
 
     timer = PausableTimer(
-      Duration(seconds: 1),
+      const Duration(seconds: 1),
       () {
         if (vervideo && !isVideoComplete.value) {
           timer..reset()..start();
@@ -260,7 +261,7 @@ class Pantalla2ctrl extends GetxController {
                 vervideo = false;
                 verimagen = true;
                 if (antesvideo) {
-                  mostrarw = Text('',
+                  mostrarw = const Text('',
                       style: TextStyle(
                         color: Colors.black,
                       ));
@@ -313,7 +314,7 @@ class Pantalla2ctrl extends GetxController {
     }
     String namepantalla = urlt.split('/').last;
 
-    var urlping = Uri.parse(urlbase + '/screensping/' + namepantalla); //esto es para ver si se rei
+    var urlping = Uri.parse('$urlbase/screensping/$namepantalla'); //esto es para ver si se rei
     try {
       var resp = await http.get(urlping);
       if (resp.statusCode == 200) {
@@ -353,7 +354,7 @@ class Pantalla2ctrl extends GetxController {
         var id0 = data.split('"id":')[1];
         var id1 = id0.split(',')[0].toString().trim();
         // print(id1);
-        var url = Uri.parse(urlbase + '/screens/json/' + id1.toString());
+        var url = Uri.parse('$urlbase/screens/json/$id1');
         final box = GetStorage();
         var resp = await http.get(url);
 
@@ -368,11 +369,10 @@ class Pantalla2ctrl extends GetxController {
             List feeds = z['feeds'];
             String feedstring = '[';
             for (var j = 0; j < feeds.length; j++) {
-              feedstring = feedstring + feeds[j].toString() + ',';
+              feedstring = '$feedstring${feeds[j]},';
             }
-            ;
-            feedstring = feedstring.substring(0, feedstring.length - 1) + ']';
-            url = Uri.parse(urlbase + '/screens/posts_from_feeds/$feedstring');
+            feedstring = '${feedstring.substring(0, feedstring.length - 1)}]';
+            url = Uri.parse('$urlbase/screens/posts_from_feeds/$feedstring');
             var resp1 = await http.get(url);
             List assests = [];
             if (resp1.statusCode == 200) {
@@ -381,7 +381,7 @@ class Pantalla2ctrl extends GetxController {
               for (var k = 0; k < posts.length; k++) {
                 var p = posts[k];
                 var resp2 = await http.get(Uri.parse(
-                    urlbase + '/posts/' + p['id'].toString() + '/json'));
+                    '$urlbase/posts/${p['id']}/json'));
                 if (resp2.statusCode == 200) {
                   hash1 += resp2.body.hashCode;
                   var post = convert.jsonDecode(resp2.body);
@@ -392,7 +392,6 @@ class Pantalla2ctrl extends GetxController {
                   assests.add(post);
                 }
               }
-              ;
             }
             z['assets'] = assests;
             // z['imagen'] = assests.length > 0
@@ -403,7 +402,6 @@ class Pantalla2ctrl extends GetxController {
             z['imagenindex'] = 0;
             // if (z['hash'] != hash1.toString()) {}
           }
-          ;
           String hash0 = box.read('qhash');
           print('hashes son diferentes?');
           print(hash1.toString() != hash0);
@@ -422,7 +420,7 @@ class Pantalla2ctrl extends GetxController {
             }
           } catch (e) {
             try {
-              if (zonas.length == 0) {
+              if (zonas.isEmpty) {
                 zonas = [];
               }
             } catch (e) {
@@ -455,7 +453,6 @@ class Pantalla2ctrl extends GetxController {
           }
         }
       }
-      ;
       if (zonast[0]['assets'].length > 0) {
         box.write('qhash', hashnuevo.toString());
         box.write('qpantallas_zonas', zonast);
@@ -475,7 +472,7 @@ class Pantalla2ctrl extends GetxController {
     var response = await request.close();
     var bytes = await consolidateHttpClientResponseBytes(response);
     String dir = (await getApplicationDocumentsDirectory()).path;
-    File file = new File('$dir/$filename');
+    File file = File('$dir/$filename');
     await file.writeAsBytes(bytes);
     return file.path;
   }

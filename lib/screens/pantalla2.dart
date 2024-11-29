@@ -14,7 +14,7 @@ import '../controllers/pantalla2ctrl.dart';
 import 'config.dart';
 
 class Pantalla2 extends StatefulWidget {
-  Pantalla2({Key? key}) : super(key: key);
+  const Pantalla2({super.key});
 
   @override
   _Pantalla2State createState() => _Pantalla2State();
@@ -56,13 +56,13 @@ class _Pantalla2State extends State<Pantalla2> {
     // }
 
     var size = MediaQuery.of(context).size;
-    if (c.zonas.length == 0) {
+    if (c.zonas.isEmpty) {
       return Scaffold(
         body: GestureDetector(
           onDoubleTap: () {
             Get.off(() => Config());
           },
-          child: Center(
+          child: const Center(
             child: Text('Ir a configuración'),
           ),
         ),

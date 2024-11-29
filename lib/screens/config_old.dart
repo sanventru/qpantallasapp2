@@ -10,6 +10,8 @@ import '../screens/pantalla2.dart';
 class Config_old extends StatelessWidget {
   final a = Get.put(Configctrl());
 
+   Config_old({super.key});
+
   @override
   Widget build(BuildContext context) {
     var size = MediaQuery.of(context).size;
@@ -20,7 +22,7 @@ class Config_old extends StatelessWidget {
         quarterTurns: a.rotado.value,
         child: Scaffold(
           appBar: AppBar(
-            title: Text('Dunkin'),
+            title: const Text('Dunkin'),
             backgroundColor: Colors.orange,
           ),
           body: SafeArea(
@@ -31,24 +33,24 @@ class Config_old extends StatelessWidget {
                     return Column(
                       children: [
                         // Image.file(File(a.imgprueba)),
-                        Container(
+                        SizedBox(
                           width: size.width * 0.9,
                           // height: 20,
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Container(
+                              SizedBox(
                                 height: size.height * 0.1,
                                 width: size.width * 0.7,
                                 child: TextField(
                                   controller: a.txturl,
                                   decoration: InputDecoration(
-                                    label: Text('url'),
+                                    label: const Text('url'),
                                     prefixIcon: IconButton(
                                         onPressed: () {
                                           a.txturl.clear();
                                         },
-                                        icon: Icon(
+                                        icon: const Icon(
                                           Icons.clear,
                                           size: 20,
                                           color: Colors.red,
@@ -61,11 +63,11 @@ class Config_old extends StatelessWidget {
                                 ),
                               ),
                               IconButton(
-                                  onPressed: a.seturl, icon: Icon(Icons.save))
+                                  onPressed: a.seturl, icon: const Icon(Icons.save))
                             ],
                           ),
                         ),
-                        SizedBox(
+                        const SizedBox(
                           height: 20,
                         ),
                         DropdownSearch<String>(
@@ -82,7 +84,7 @@ class Config_old extends StatelessWidget {
                             },
                             selectedItem: a.orientacion),
                         
-                        SizedBox(
+                        const SizedBox(
                           height: 10,
                         ),
                         // TextButton(
@@ -90,7 +92,7 @@ class Config_old extends StatelessWidget {
                         //       Get.reloadAll();
                         //     },
                         //     child: Text('Recargar valores')),
-                        SizedBox(
+                        const SizedBox(
                           height: 10,
                         ),
                         TextButton(
@@ -99,7 +101,7 @@ class Config_old extends StatelessWidget {
                               Get.to(() => Pantalla2());
                               // exit(0);
                             },
-                            child: Text('Guardar configuración'))
+                            child: const Text('Guardar configuración'))
                       ],
                     );
                   }))),
