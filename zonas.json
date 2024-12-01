@@ -1,0 +1,72 @@
+// http://164.90.148.158:5500/screens/json/120
+// http://164.90.148.158:5500/screens/posts_from_feeds/[145]
+// http://164.90.148.158:5500/posts/5534/json
+
+
+
+[
+    {
+        "bottom": "100%",
+        "classes": "",
+        "color": "#fff",
+        "css": "",
+        "fadetime": 145,
+        "fontfamily": "",
+        "left": "50%",
+        "name": "zone1",
+        "right": "0%",
+        "selected": true,
+        "top": "0%",
+        "type": "fade",
+        "assets": [
+            {
+                "changed": "Fri, 29 Nov 2024 15:16:25 GMT",
+                "content": {
+                    "content": "9a3b2fbd-3e52-4060-b325-e75ec73ade70pantalla-horizontal-flats-y-sanduche-americano-segundo-a-mitad-de-precio.jpg",
+                    "file_url": "/static/user_files/post_images/9a3b2fbd-3e52-4060-b325-e75ec73ade70pantalla-horizontal-flats-y-sanduche-americano-segundo-a-mita…",
+                    "filename": "9a3b2fbd-3e52-4060-b325-e75ec73ade70pantalla-horizontal-flats-y-sanduche-americano-segundo-a-mitad-de-precio.jpg",
+                    "file": "/data/user/0/com.example.qpantallasapp2/app_flutter/478d10bd-c5c2-4e16-87f3-4b845a68af15Pantalla-menu-deuna-caja-de-3-donuts---recarga-tus-mananas-vertical-y-horizontal.jpg"
+                },
+                "display_time": 25000,
+                "id": 5534,
+                "time_restrictions": [],
+                "time_restrictions_show": false,
+                "type": "image"
+            },
+            {
+                "changed": "Fri, 29 Nov 2024 15:16:47 GMT",
+                "content": {
+                    "content": "9a3b2fbd-3e52-4060-b325-e75ec73ade70pantalla-horizontal-flats-y-sanduche-americano-segundo-a-mitad-de-precio.jpg",
+                    "file_url": "/static/user_files/post_images/9a3b2fbd-3e52-4060-b325-e75ec73ade70pantalla-horizontal-flats-y-sanduche-americano-segundo-a-mita…",
+                    "filename": "9a3b2fbd-3e52-4060-b325-e75ec73ade70pantalla-horizontal-flats-y-sanduche-americano-segundo-a-mitad-de-precio.jpg",
+                    "file": "/data/user/0/com.example.qpantallasapp2/app_flutter/9a3b2fbd-3e52-4060-b325-e75ec73ade70pantalla-horizontal-flats-y-sanduche-ame…"
+                },
+                "display_time": 25000,
+                "id": 5535,
+                "time_restrictions": [],
+                "time_restrictions_show": false,
+                "type": "image"
+            }
+        ],
+        "imagen": "/data/user/0/com.example.qpantallasapp2/app_flutter/478d10bd-c5c2-4e16-87f3-4b845a68af15Pantalla-menu-deuna-caja-de-3-donuts---recarga-tus-mananas-vertical-y-horizontal.jpg",
+        "imagenindex": 0
+    },
+    {
+        "bottom": "0%",
+        "classes": "",
+        "color": "#fff",
+        "css": "",
+        "fadetime": 250,
+        "feeds": [],
+        "fontfamily": "",
+        "left": "0%",
+        "name": "zone2",
+        "right": "50%",
+        "selected": false,
+        "top": "0%",
+        "type": "fade",
+        "assets": [],
+        "imagen": "",
+        "imagenindex": 0
+    }
+]
