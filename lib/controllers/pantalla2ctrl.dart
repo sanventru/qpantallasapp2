@@ -1,37 +1,24 @@
 import 'dart:io';
-// import 'dart:js';
-// import 'dart:typed_data';
-// import 'dart:ui';
-
 import 'package:extended_image/extended_image.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-// import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'dart:async';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
-//import 'package:video_viewer/video_viewer.dart';
 import 'dart:convert' as convert;
 import 'package:video_player/video_player.dart';
-
-// import '../screens/config.dart';
-// import 'package:image/image.dart' as im;
-// import 'package:flutter_startup/flutter_startup.dart';
 import 'package:pausable_timer/pausable_timer.dart';
 import '../globals.dart' as globals;
 import 'package:restart_app/restart_app.dart';
 
 class Pantalla2ctrl extends GetxController {
-  VideoPlayerController? videoController;
-
-  bool isPlaying = false;
+  Map<int, VideoPlayerController?> videoControllers = {};
+  Map<int, Widget> zonasWidgets = {};
+  
   bool actualizando = false;
   static var httpClient = HttpClient();
-  bool vervideo = false;
-  bool verimagen = false;
-  // String urlbase = 'http://164.90.148.158:5000';
   String urlbase = globals.urlbase;
   var texto = ''.obs;
   String url = '${globals.urlbase}/screens/basic/default';
@@ -39,65 +26,87 @@ class Pantalla2ctrl extends GetxController {
   var cambio = ''.obs;
   var rotado = 0.obs;
   List zonas = [];
-  int periodictime = 3;
-  late Timer timerp;
+  Map<int, bool> verVideo = {};
+  Map<int, bool> verImagen = {};
+  Map<int, bool> isVideoComplete = {};
+  // int periodictime = 3;
+    Map<int, int> periodictimes = {};  
   late final PausableTimer timer;
-  var countDown = 5;
-  final isVideoComplete = false.obs;
 
   @override
   void onClose() {
-    videoController?.dispose();
+    for (var controller in videoControllers.values) {
+      controller?.dispose();
+    }
     super.onClose();
   }
 
-   void _initVideoController(String path) {
-    videoController?.dispose();
-    videoController = VideoPlayerController.file(File(path))
+  void _initVideoController(String path, int zoneIndex) {
+    videoControllers[zoneIndex]?.dispose();
+    videoControllers[zoneIndex] = VideoPlayerController.file(File(path))
       ..initialize().then((_) {
-        videoController?.play();
-        videoController?.addListener(_onVideoStateChange);
+        videoControllers[zoneIndex]?.play();
+        videoControllers[zoneIndex]?.addListener(() => _onVideoStateChange(zoneIndex));
       });
   }
 
-  Widget mostrarw = const Center(
-    child: Text(
-      'Iniciando bucle.....',
-      style: TextStyle(color: Colors.white),
-    ),
-  );
+  void _onVideoStateChange(int zoneIndex) {
+    var controller = videoControllers[zoneIndex];
+    if (controller == null) return;
 
-
-    void _onVideoStateChange() {
-     if (videoController?.value.isPlaying == false && 
-        videoController?.value.position == videoController?.value.duration) {
-      isVideoComplete.value = true;
-      periodictime = 2;
+    // Si el video terminó
+    if (!controller.value.isPlaying && 
+        controller.value.position >= controller.value.duration) {
+      print('Video completado en zona $zoneIndex');
+      isVideoComplete[zoneIndex] = true;
+      periodictimes[zoneIndex] = 0;  // Forzar actualización inmediata
+      cambio.value = DateTime.now().toString();  // Forzar actualización de UI
     }
+  }
+
+  Widget buildZoneWidget(int zoneIndex, Map zonaData) {
+    if (verVideo[zoneIndex] == true) {
+      return AspectRatio(
+        aspectRatio: 16/9,
+        child: VideoPlayer(videoControllers[zoneIndex]!),
+      );
+    } else if (verImagen[zoneIndex] == true) {
+      if (zonaData['imagen'].toString().isEmpty) {
+        return const SizedBox.shrink();
+      }
+      return ExtendedImage.file(
+        File(zonaData['imagen']),
+        fit: BoxFit.cover,
+      );
+    }
+    return const Center(
+      child: Text(
+        'Iniciando bucle.....',
+        style: TextStyle(color: Colors.white),
+      ),
+    );
   }
 
   @override
   onReady() {
-
-       // Inicializar el video controller
-    // videoController = CustomVideoPlayerController();
-    // Agregar listener para el estado del video
-    videoController?.addListener(_onVideoStateChange);
     print('Pantalla2ctrl onReady');
     final box = GetStorage();
     try {
       if (box.read('qpantallas_zonas') != null) {
         zonas = box.read('qpantallas_zonas');
+        // Inicializar los mapas para cada zona
+        for (var i = 0; i < zonas.length; i++) {
+          verVideo[i] = false;
+          verImagen[i] = false;
+          isVideoComplete[i] = false;
+          periodictimes[i] = 3; 
+          zonasWidgets[i] = buildZoneWidget(i, zonas[i]);
+        }
       }
-      // box.write('zonas', zonas);
     } catch (e) {
-      // zonas = [];
       print((e.toString()));
     }
 
-    // print(zonas);
-    // print(zonas[0]['assets'][0]['content']['file_url']);
-    // "/static/user_files/post_images/cb24ef1e-3591-4c8c-bcc3-36ce053d1f0dNUEVO_MENU_TERMINALOUTLINES_360-02.jpg"
     var hayzona = false;
     try {
       if (box.read('qpantalla_url') != null) {
@@ -108,7 +117,7 @@ class Pantalla2ctrl extends GetxController {
     } catch (e) {
       print('errrrrrrrooooooooor');
     }
-    String v;
+
     try {
       if (box.read('qpantalla_orientacion') != null) {
         orientacion = box.read('qpantalla_orientacion');
@@ -124,174 +133,145 @@ class Pantalla2ctrl extends GetxController {
     } else {
       rotado.value = 0;
     }
+    
     if (hayzona) {
-      // inicio();
       startTimer();
-      // compruebacambioszona();
     }
   }
 
-
-
-  inicio() async {
-    compute(startTimer(), periodictime);
-  }
-
   startTimer() {
-    // el 8 cambiar por una variable global que se actualiza al igual que zona[imagen]
-
     timer = PausableTimer(
       const Duration(seconds: 1),
       () {
-        if (vervideo && !isVideoComplete.value) {
-          timer..reset()..start();
-          return;
-        }
-        periodictime--;
-        if (periodictime > 0) {
-          timer
-            ..reset()
-            ..start();
-        } else {
-          periodictime = 3;
-          try {
-            if (zonas[0]['assets'].length == 0) {
-              ping();
+        bool anyVideoPlaying = false;
+         // Primero verificamos videos en reproducción
+        for (var i = 0; i < zonas.length; i++) {
+          if (verVideo[i] == true) {
+            // Si el video está completo, lo marcamos para actualizar
+            if (isVideoComplete[i] == true) {
+              periodictimes[i] = 0;
+            } else {
+              // Si el video está reproduciéndose, no decrementamos su tiempo
+              anyVideoPlaying = true;
+              // Verificar si el video está efectivamente reproduciéndose
+              if (videoControllers[i]?.value.isPlaying == true) {
+                print('Video reproduciéndose en zona $i');
+                timer..reset()..start();
+                return;
+              }
             }
-            bool antesvideo = false;
-            for (var i = 0; i < zonas.length; i++) {
-              if (zonas[i]['imagenindex'] + 1 < zonas[i]['assets'].length) {
-                if (zonas[i]['imagen'].toString().contains('mp4') ||
-                    zonas[i]['imagen'].toString().contains('.mov')) {
-                  String futurovideo = zonas[i]['assets']
-                      [zonas[i]['imagenindex'] + 1]['content']['file'];
-                  if (futurovideo.contains('mp4') ||
-                      futurovideo.contains('.mov')) {
-                    antesvideo = true;
-                    zonas[i]['imagen'] = 'test.png';
-                    antesvideo = true;
-                    zonas[i]['imagenindex'] = zonas[i]['imagenindex'];
-                  } else {
-                    // if (zonas[i]['imagenindex'] ==
-                    //     zonas[i]['assets'].length - 1) {
-                    //   zonas[i]['imagenindex'] = zonas[i]['imagenindex'] - 1;
-                    // }
-                    zonas[i]['imagenindex'] = zonas[i]['imagenindex'] + 1;
-                  }
-                } else {
-                  zonas[i]['imagenindex'] = zonas[i]['imagenindex'] + 1;
-                }
-              } else {
-                String futurovideo = zonas[i]['assets'][0]['content']['file'];
-                if (futurovideo.contains('mp4') ||
-                    futurovideo.contains('.mov')) {
-                  antesvideo = true;
-                  zonas[i]['imagen'] = 'test.png';
-                  antesvideo = true;
-                  zonas[i]['imagenindex'] = -1;
-                } else {
-                  zonas[i]['imagenindex'] = 0;
-                }
-                cargahtml(false);
-                ping();
-              }
-              if (antesvideo) {
-                periodictime = 0;
-              } else {
-                periodictime = int.parse((zonas[i]['assets']
-                            [zonas[i]['imagenindex']]['display_time'] /
-                        1000)
-                    .toString()
-                    .split('.')[0]);
-              }
-
-              if (!antesvideo) {
-                zonas[i]['imagen'] = zonas[i]['assets'][zonas[i]['imagenindex']]
-                    ['content']['file'];
-              } else {
-                vervideo = false;
-                verimagen = true;
-              }
-
-              if (zonas[i]['imagen'].toString().contains('.mp4') ||
-                  zonas[i]['imagen'].toString().contains('.mov')) {
-                vervideo = true;
-                verimagen = false;
-                isVideoComplete.value = false; 
-                 _initVideoController(zonas[i]['imagen']);
-                // mostrarw = CustomVideoPlayer(
-                //   videoPath: (zonas[i]['imagen']),
-                //   showControls: true, // Si quieres mostrar controles o no
-                //   controller: videoController,
-                // );
-                // periodictime = 10;
-                    mostrarw = AspectRatio(
-                  aspectRatio: 16/9,
-                  child: VideoPlayer(videoController!),
-                );
-                // VideoViewerController controller = VideoViewerController();
-                // controllerg = controller;
-                // controller.addListener(listenToPlayingChanges);
-                // mostrarw = VideoViewer(
-                //   controller: controllerg,
-                //   autoPlay: true,
-                //   // looping: true,
-                //   source: {
-                //     "${zonas[i]['imagen']}": VideoSource(
-                //       video:
-                //           VideoPlayerController.file(File(zonas[i]['imagen'])),
-                //     )
-                //   },
-
-                //   // onFullscreenFixLandscape: true,
-                //   // enableFullscreenScale: false,
-                //   // defaultAspectRatio: 1 / 1,
-                //   style: VideoViewerStyle(
-                //     loading: Text(
-                //       '',
-                //       style: const TextStyle(color: Colors.black),
-                //     ),
-                //   ),
-                //   enableShowReplayIconAtVideoEnd: false,
-                // );
-                // if (controllerg.video != null) {
-                //   controllerg.play();
-                // }
-              } else {
-                vervideo = false;
-                verimagen = true;
-                if (antesvideo) {
-                  mostrarw = const Text('',
-                      style: TextStyle(
-                        color: Colors.black,
-                      ));
-                } else {
-                  mostrarw = ExtendedImage.file(
-                    File(zonas[i]['imagen']),
-                    fit: BoxFit.cover,
-                  );
-                }
-              }
-
-              print(
-                  '${zonas[i]['imagenindex']} : ${zonas[i]['imagen']} : $periodictime');
-              cambio.value =
-                  '${DateTime.now().toString()} __   ${zonas[i]['imagenindex']} : ${zonas[i]['imagen']} : $periodictime ';
-            }
-            timer.reset();
-            timer.start();
-            // timer
-            //   ..reset()
-            //   ..start();
-          } catch (e) {
-            timer.reset();
-            timer.start();
-            periodictime = 3;
           }
         }
-        print('\t$periodictime');
+
+        // if (anyVideoPlaying) {
+        //   timer..reset()..start();
+        //   return;
+        // }
+
+         if (!anyVideoPlaying) {
+          bool needsUpdate = false;
+
+          // Actualizar tiempos y determinar si continuar
+        for (var i = 0; i < zonas.length; i++) {
+          if (periodictimes[i]! > 0) {
+            periodictimes[i] = periodictimes[i]! - 1;
+            print('periodictimes[i] ${periodictimes[i]}');
+            // shouldContinue = true;
+          }
+            // Si alguna zona llegó a 0, necesitamos actualizar
+            if (periodictimes[i] == 0) {
+              needsUpdate = true;
+            }
+        }
+
+          if (needsUpdate) {
+            for (var i = 0; i < zonas.length; i++) {
+              if (periodictimes[i] == 0) {
+                updateZone(i);
+              }
+            }
+          }
+        }
+
+       // Reiniciar el timer
+        timer..reset()..start();
+        cambio.value = DateTime.now().toString();
       },
     )..start();
+  }
+
+  void updateZone(int zoneIndex) {
+    if (zonas[zoneIndex]['assets'].isEmpty) return;
+
+      // Limpiar estado anterior
+    verVideo[zoneIndex] = false;
+    verImagen[zoneIndex] = false;
+    isVideoComplete[zoneIndex] = false;
+
+    bool antesvideo = false;
+    var zona = zonas[zoneIndex];
+
+    if (zona['imagenindex'] + 1 < zona['assets'].length) {
+      if (zona['imagen'].toString().contains('mp4') ||
+          zona['imagen'].toString().contains('.mov')) {
+        String futurovideo = zona['assets'][zona['imagenindex'] + 1]['content']['file'];
+        if (futurovideo.contains('mp4') || futurovideo.contains('.mov')) {
+          antesvideo = true;
+          zona['imagen'] = 'test.png';
+          zona['imagenindex'] = zona['imagenindex'];
+        } else {
+          zona['imagenindex'] = zona['imagenindex'] + 1;
+        }
+      } else {
+        zona['imagenindex'] = zona['imagenindex'] + 1;
+      }
+    } else {
+      String futurovideo = zona['assets'][0]['content']['file'];
+      if (futurovideo.contains('mp4') || futurovideo.contains('.mov')) {
+        antesvideo = true;
+        zona['imagen'] = 'test.png';
+        zona['imagenindex'] = -1;
+      } else {
+        zona['imagenindex'] = 0;
+      }
+      cargahtml(false);
+      ping();
+    }
+
+    if (antesvideo) {
+      periodictimes[zoneIndex] = 0;
+    } else {
+       periodictimes[zoneIndex] = int.parse((zona['assets'][zona['imagenindex']]['display_time'] / 1000)
+          .toString()
+          .split('.')[0]);
+    }
+
+   if (!antesvideo) {
+      zona['imagen'] = zona['assets'][zona['imagenindex']]['content']['file'];
+      // Establecer tiempo para imágenes
+      periodictimes[zoneIndex] = int.parse(
+        (zona['assets'][zona['imagenindex']]['display_time'] / 1000)
+          .toString()
+          .split('.')[0]
+      );
+    }
+
+    if (zona['imagen'].toString().contains('.mp4') ||
+        zona['imagen'].toString().contains('.mov')) {
+      verVideo[zoneIndex] = true;
+      verImagen[zoneIndex] = false;
+      isVideoComplete[zoneIndex] = false;
+      print('reproduciendo video@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@');
+      _initVideoController(zona['imagen'], zoneIndex);
+    } else {
+      verVideo[zoneIndex] = false;
+      verImagen[zoneIndex] = true;
+    }
+
+    zonasWidgets[zoneIndex] = buildZoneWidget(zoneIndex, zona);
+    
+    print('${zona['imagenindex']} : ${zona['imagen']} : ${periodictimes[zoneIndex]}');
+    cambio.value = '${DateTime.now().toString()} __   ${zona['imagenindex']} : ${zona['imagen']} : $periodictimes[zoneIndex] ';
   }
 
   checkexists(path) async {
@@ -308,21 +288,18 @@ class Pantalla2ctrl extends GetxController {
     try {
       urlt = box.read('qpantalla_url');
     } catch (e) {
-      // print('errrrrrrrooooooooor de ping');
       box.write('qpantalla_url', '${globals.urlbase}/screens/basic/default');
       urlt = '${globals.urlbase}screens/basic/default';
     }
     String namepantalla = urlt.split('/').last;
 
-    var urlping = Uri.parse('$urlbase/screensping/$namepantalla'); //esto es para ver si se rei
+    var urlping = Uri.parse('$urlbase/screensping/$namepantalla');
     try {
       var resp = await http.get(urlping);
       if (resp.statusCode == 200) {
         if (resp.body == 'si') {
           box.write('qhash', '');
           cargahtml(true);
-
-          // box.write('qpantallas_zonas', []);
         }
         print('ping ok');
       } else {
@@ -345,7 +322,6 @@ class Pantalla2ctrl extends GetxController {
     }
     try {
       var response = await http.get(Uri.parse(url));
-
       int hash1 = 0;
 
       if (response.statusCode == 200) {
@@ -353,7 +329,6 @@ class Pantalla2ctrl extends GetxController {
         String data = response.body;
         var id0 = data.split('"id":')[1];
         var id1 = id0.split(',')[0].toString().trim();
-        // print(id1);
         var url = Uri.parse('$urlbase/screens/json/$id1');
         final box = GetStorage();
         var resp = await http.get(url);
@@ -362,10 +337,9 @@ class Pantalla2ctrl extends GetxController {
           hash1 += resp.body.hashCode;
           var infozonas = convert.jsonDecode(resp.body);
           List zonast = infozonas['screen']['zones'];
-          // box.write('qpantallas_zonas', zonas);
+          
           for (var i = 0; i < zonast.length; i++) {
             var z = zonast[i];
-
             List feeds = z['feeds'];
             String feedstring = '[';
             for (var j = 0; j < feeds.length; j++) {
@@ -375,6 +349,7 @@ class Pantalla2ctrl extends GetxController {
             url = Uri.parse('$urlbase/screens/posts_from_feeds/$feedstring');
             var resp1 = await http.get(url);
             List assests = [];
+            
             if (resp1.statusCode == 200) {
               hash1 += resp1.body.hashCode;
               var posts = convert.jsonDecode(resp1.body)['posts'];
@@ -385,38 +360,35 @@ class Pantalla2ctrl extends GetxController {
                 if (resp2.statusCode == 200) {
                   hash1 += resp2.body.hashCode;
                   var post = convert.jsonDecode(resp2.body);
-                  // String fileurl = urlbase + post['content']['file_url'];
-                  // String filep = await downloadFile(
-                  //     fileurl, post['content']['filename'].toString());
-                  // post['content']['file'] = filep;
                   assests.add(post);
                 }
               }
             }
             z['assets'] = assests;
-            // z['imagen'] = assests.length > 0
-            //     ? urlbase + assests[0]['content']['file_url']
-            //     : '';
-            z['imagen'] =
-                assests.isNotEmpty ? assests[0]['content']['file'] : '';
+            z['imagen'] = assests.isNotEmpty ? assests[0]['content']['file'] : '';
             z['imagenindex'] = 0;
-            // if (z['hash'] != hash1.toString()) {}
           }
+
           String hash0 = box.read('qhash');
           print('hashes son diferentes?');
           print(hash1.toString() != hash0);
           print('actualizandoooooooooo     $actualizando');
+          
           if (hash1.toString() != hash0 && actualizando == false) {
             actualizando = true;
             print('empieza a descargar ##########################');
             await descargarporcambios(zonast, hash1, reiniciar);
           }
-          // box.write('qpantallas_zonas', zonast);
+
           try {
             var zonastempp = box.read('qpantallas_zonas');
             zonas = zonastempp;
+            // Reinicializar los widgets de zona después de actualizar zonas
+            for (var i = 0; i < zonas.length; i++) {
+              zonasWidgets[i] = buildZoneWidget(i, zonas[i]);
+            }
             if (reiniciar) {
-               Restart.restartApp();
+              Restart.restartApp();
             }
           } catch (e) {
             try {
@@ -442,7 +414,6 @@ class Pantalla2ctrl extends GetxController {
       for (var i = 0; i < zonast.length; i++) {
         var zt = zonast[i];
         for (var k = 0; k < zt['assets'].length; k++) {
-          // String as_url = urlbase + zt['assets'][k]['content']['file_url'];
           String filep = await downloadFile(
               urlbase + zt['assets'][k]['content']['file_url'],
               zt['assets'][k]['content']['filename'].toString());
@@ -457,7 +428,7 @@ class Pantalla2ctrl extends GetxController {
         box.write('qhash', hashnuevo.toString());
         box.write('qpantallas_zonas', zonast);
         if (reiniciar) {
-           Restart.restartApp();
+          Restart.restartApp();
         }
       }
     } catch (e) {
@@ -465,7 +436,6 @@ class Pantalla2ctrl extends GetxController {
     }
     actualizando = false;
   }
-
   Future<String> downloadFile(String url, String filename) async {
     print('descargando fileeeeeeeeee');
     var request = await httpClient.getUrl(Uri.parse(url));

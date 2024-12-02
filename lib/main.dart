@@ -4,6 +4,7 @@ import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:get/get.dart';
 // import '../screens/config.dart';
 import 'package:get_storage/get_storage.dart';
+import 'package:qpantallasapp2/controllers/pantalla2ctrl.dart';
 import '../screens/pantalla2.dart';
 
 void main() async {
@@ -14,6 +15,7 @@ void main() async {
   // ]).then((_) {
   //   runApp(MyApp());
   // });
+   Get.put(Pantalla2ctrl()); // Agregar esta línea
 
   runApp(const MyApp());
 }
