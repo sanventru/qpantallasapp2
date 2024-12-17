@@ -77,6 +77,9 @@ class Pantalla2ctrl extends GetxController {
       return ExtendedImage.file(
         File(zonaData['imagen']),
         fit: BoxFit.cover,
+        key: ValueKey('${zonaData['imagen']}_${DateTime.now().millisecondsSinceEpoch}'), // Key forzada para Android 7
+        clearMemoryCacheIfFailed: true,
+        clearMemoryCacheWhenDispose: true,
       );
     }
     return const Center(
